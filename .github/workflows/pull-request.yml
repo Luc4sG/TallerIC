@@ -103,18 +103,6 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        with:
-          args: >
-            -Dsonar.python.coverage.reportPaths=coverage.xml
-            -Dsonar.python.xunit.reportPath=test-results.xml
-            -Dsonar.projectKey=${{ github.repository }}
-            -Dsonar.projectName=${{ github.repository }}
-            -Dsonar.projectVersion=1.0
-            -Dsonar.sources=.
-            -Dsonar.exclusions=**/tests/**,**/venv/**,**/__pycache__/**
-            -Dsonar.tests=tests
-            -Dsonar.test.inclusions=**/test_*.py
-            -Dsonar.python.version=3.11
 
   notify-sonarqube-failure:
     name: Notify SonarQube Failure
