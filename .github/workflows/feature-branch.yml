@@ -1,0 +1,105 @@
+name: Feature Branch CI
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Run tests
+        run: |
+          pytest tests/ -v
+
+  notify-test-failure:
+    name: Notify Test Failure
+    needs: test
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: danger
+          SLACK_TITLE: Tests Failed
+          SLACK_MESSAGE: |
+            ❌ Tests failed for branch `${{ github.ref_name }}`
+            Please fix the failing tests before continuing
+          SLACK_FOOTER: Feature Branch Workflow
+
+  lint:
+    name: Run Linting
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: Run flake8
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          
+      - name: Run black
+        run: |
+          black . --check
+
+  notify-lint-failure:
+    name: Notify Linting Failure
+    needs: lint
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: danger
+          SLACK_TITLE: Linting Failed
+          SLACK_MESSAGE: |
+            ❌ Linting failed for branch `${{ github.ref_name }}`
+            Please fix the linting issues before continuing
+          SLACK_FOOTER: Feature Branch Workflow
+
+  notify-success:
+    name: Notify Success
+    needs: [test, lint]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: good
+          SLACK_TITLE: Feature Branch CI Success
+          SLACK_MESSAGE: |
+            ✅ All checks passed for branch `${{ github.ref_name }}`
+            - Tests: ✅
+            - Linting: ✅
+          SLACK_FOOTER: Feature Branch Workflow 

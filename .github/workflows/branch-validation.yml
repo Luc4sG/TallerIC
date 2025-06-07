@@ -1,0 +1,39 @@
+name: Branch Validation 
+
+on:
+  create:
+    ref_type: branch
+
+jobs:
+  validate-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Extract Trello card ID
+        id: extract
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          CARD_ID=$(echo $BRANCH_NAME | grep -o 'feature/[A-Za-z0-9]*-' | cut -d'/' -f2 | cut -d'-' -f1)
+          echo "CARD_ID=$CARD_ID" >> $GITHUB_ENV
+          if [ -z "$CARD_ID" ]; then
+            echo "Invalid branch name format. Expected: feature/CARD_ID-description"
+            exit 1
+          fi
+
+      - name: Move Trello card to In Progress
+        run: |
+          curl -s -X PUT "https://api.trello.com/1/cards/${{ env.CARD_ID }}/idList?value=${{ secrets.TRELLO_IN_PROGRESS_LIST_ID }}&key=${{ secrets.TRELLO_KEY }}&token=${{ secrets.TRELLO_TOKEN }}" -o /dev/null \
+          && echo "✅ Trello card ${{ env.CARD_ID }} moved to In Progress"
+
+      - name: Notify Slack
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: good
+          SLACK_TITLE: New Feature Branch Created 🎉
+          SLACK_MESSAGE: |
+            Branch: `${{ github.ref_name }}`
+            Trello card moved to In Progress
+          SLACK_FOOTER: Branch Validation Workflow 

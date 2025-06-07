@@ -1,0 +1,41 @@
+name: Deploy to Render
+
+on:
+  workflow_run:
+    workflows: ["Pull Request CI"]
+    branches:
+      - main
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      deployments: write
+    steps:
+      - uses: JorgeLNJunior/render-deploy@v1.4.5
+        with:
+          service_id: ${{ secrets.RENDER_SERVICE_ID }}
+          api_key: ${{ secrets.RENDER_API_KEY }}
+          clear_cache: true
+          wait_deploy: true
+          github_deployment: true
+          deployment_environment: 'production'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Notify Slack
+        if: always()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_TITLE: Production Deployment Status
+          SLACK_MESSAGE: |
+            🚀 Deployment to Render ${{ job.status }}
+            Branch: `${{ github.ref_name }}`
+            Commit: `${{ github.sha }}`
+            Workflow: `${{ github.event.workflow_run.name }}`
+            Triggered by: `${{ github.event.workflow_run.actor }}`
+          SLACK_FOOTER: Production Deploy Workflow 
