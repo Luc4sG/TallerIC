@@ -1,0 +1,62 @@
+name: Move Trello Cards
+
+on:
+  workflow_run:
+    workflows: ["Pull Request CI"]
+    branches:
+      - main
+      - develop
+    types:
+      - completed
+
+jobs:
+  move-cards:
+    name: Move Trello Cards
+    runs-on: ubuntu-latest
+    if: |
+      github.event.workflow_run.conclusion == 'success' && 
+      github.event.workflow_run.event == 'pull_request' && 
+      github.event.workflow_run.event.pull_request.merged == true && 
+      github.event.workflow_run.event.action == 'closed'
+    steps:
+      - name: Extract Trello Card IDs
+        id: extract
+        run: |
+          # Extract card IDs from PR description using multiple patterns
+          CARD_IDS=$(echo "${{ github.event.workflow_run.event.pull_request.body }}" | grep -o -E 'https://trello.com/c/[A-Za-z0-9]+|trello.com/c/[A-Za-z0-9]+|\[Trello\]\(https://trello.com/c/[A-Za-z0-9]+\)' | sed -E 's/.*trello.com\/c\/([A-Za-z0-9]+).*/\1/')
+          if [ -z "$CARD_IDS" ]; then
+            echo "No Trello card IDs found in PR description"
+            exit 0
+          fi
+          echo "CARD_IDS=$CARD_IDS" >> $GITHUB_ENV
+          
+      - name: Move Cards Based on Target Branch
+        if: env.CARD_IDS != ''
+        run: |
+          # Determine target list ID based on the target branch
+          if [ "${{ github.event.workflow_run.event.pull_request.base.ref }}" = "main" ]; then
+            LIST_ID="${{ secrets.TRELLO_DONE_LIST_ID }}"
+            LIST_NAME="Done"
+          else
+            LIST_ID="${{ secrets.TRELLO_REVIEW_LIST_ID }}"
+            LIST_NAME="Review"
+          fi
+          
+          for CARD_ID in ${{ env.CARD_IDS }}; do
+            curl -s -X PUT "https://api.trello.com/1/cards/$CARD_ID/idList?value=$LIST_ID&key=${{ secrets.TRELLO_KEY }}&token=${{ secrets.TRELLO_TOKEN }}" -o /dev/null
+            echo "✅ Moved Trello card $CARD_ID to $LIST_NAME"
+          done
+
+      - name: Notify Slack
+        if: always()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: ${{ job.status }}
+          SLACK_TITLE: Trello Cards Update
+          SLACK_MESSAGE: |
+            🎯 Trello cards update ${{ job.status }}
+            PR: `${{ github.event.workflow_run.event.pull_request.title }}`
+            Branch: `${{ github.event.workflow_run.event.pull_request.base.ref }}`
+            Cards moved to: `${{ job.status == 'success' && 'Done/Review' || 'Failed' }}`
+          SLACK_FOOTER: Trello Cards Workflow 
