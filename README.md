@@ -59,4 +59,84 @@ El pipeline incluye los siguientes workflows:
   - Fallos en linting
   - Fallos en pruebas
   - Fallos en análisis de SonarQube
-  - Fallos y éxitos en despliegue 
+  - Fallos y éxitos en despliegue
+
+# TallerIC
+
+## Configuración del Entorno de Desarrollo
+
+### 1. Crear y Activar Entorno Virtual
+
+```bash
+# Crear entorno virtual
+python -m venv venv
+
+# Activar entorno virtual
+# En Windows:
+.\venv\Scripts\activate
+# En Linux/Mac:
+source venv/bin/activate
+```
+
+### 2. Instalar Dependencias
+
+```bash
+# Instalar dependencias del proyecto
+pip install -r requirements.txt
+
+# Instalar herramientas de desarrollo
+pip install pre-commit flake8 flake8-docstrings isort
+```
+
+### 3. Configurar Pre-commit Hooks
+
+```bash
+# Instalar hooks de pre-commit
+pre-commit install
+
+# Verificar que los hooks funcionan
+pre-commit run --all-files
+```
+
+### 4. Comandos Útiles
+
+```bash
+# Formatear código
+black .
+
+# Ordenar imports
+isort .
+
+# Verificar linting
+flake8 .
+
+# Verificar todo antes de commit
+pre-commit run --all-files
+```
+
+### 5. Flujo de Trabajo
+
+1. Activar el entorno virtual
+2. Hacer cambios en el código
+3. Formatear con black e isort
+4. Verificar con flake8
+5. Hacer commit (los hooks se ejecutarán automáticamente)
+
+### 6. Solución de Problemas
+
+Si encuentras errores al ejecutar pre-commit:
+
+1. Verificar que el entorno virtual está activado
+2. Verificar que todas las dependencias están instaladas
+3. Reinstalar los hooks:
+```bash
+pre-commit uninstall
+pre-commit install
+```
+
+### 7. Notas Importantes
+
+- Siempre trabaja dentro del entorno virtual
+- Los hooks de pre-commit se ejecutarán automáticamente al hacer commit
+- Si los hooks fallan, el commit será rechazado hasta que corrijas los errores
+- Puedes formatear manualmente con `black .` e `isort .` en cualquier momento 
