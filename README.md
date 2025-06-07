@@ -1,5 +1,7 @@
 # FastAPI Hello World with CI/CD Pipeline
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Luc4sG_TallerIC&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Luc4sG_TallerIC)
+
 Este proyecto es una aplicación simple de FastAPI con un pipeline completo de CI/CD que incluye:
 - Integración con Trello y Slack
 - Validación de nombres de ramas
