@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -23,10 +25,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pytest-cov
           
-      - name: Run tests
+      - name: Run tests with coverage
         run: |
-          PYTHONPATH=$PYTHONPATH:$(pwd) pytest tests/ -v
+          pytest --cov=./ --cov-report=xml:coverage.xml --junitxml=test-results.xml
 
   notify-test-failure:
     name: Notify Test Failure
@@ -39,12 +42,10 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_COLOR: danger
-          SLACK_TITLE: Pull Request Tests Failed
+          SLACK_TITLE: Tests Failed
           SLACK_MESSAGE: |
-            ❌ Tests failed in Pull Request
-            PR: `${{ github.event.pull_request.title }}`
-            Author: `${{ github.event.pull_request.user.login }}`
-            Please fix the failing tests before merging
+            ❌ Tests failed for branch `${{ github.ref_name }}`
+            Please fix the failing tests before continuing
           SLACK_FOOTER: Pull Request Workflow
 
   lint:
@@ -53,6 +54,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
       
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -63,20 +66,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pre-commit
           
-      - name: Run flake8
+      - name: Run pre-commit checks
         run: |
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-          
-      - name: Run black
-        run: |
-          black .
+          pre-commit run --all-files
 
   notify-lint-failure:
     name: Notify Linting Failure
     needs: lint
-    if: failure()
+    if: failure() && needs.lint.result == 'failure'
     runs-on: ubuntu-latest
     steps:
       - name: Notify Slack
@@ -84,12 +83,10 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_COLOR: danger
-          SLACK_TITLE: Pull Request Linting Failed
+          SLACK_TITLE: Linting Failed
           SLACK_MESSAGE: |
-            ❌ Linting failed in Pull Request
-            PR: `${{ github.event.pull_request.title }}`
-            Author: `${{ github.event.pull_request.user.login }}`
-            Please fix the linting issues before merging
+            ❌ Linting failed for branch `${{ github.ref_name }}`
+            Please fix the linting issues before continuing
           SLACK_FOOTER: Pull Request Workflow
 
   sonarqube:
@@ -100,11 +97,24 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          
+
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        with:
+          args: >
+            -Dsonar.python.coverage.reportPaths=coverage.xml
+            -Dsonar.python.xunit.reportPath=test-results.xml
+            -Dsonar.projectKey=${{ github.repository }}
+            -Dsonar.projectName=${{ github.repository }}
+            -Dsonar.projectVersion=1.0
+            -Dsonar.sources=.
+            -Dsonar.exclusions=**/tests/**,**/venv/**,**/__pycache__/**
+            -Dsonar.tests=tests
+            -Dsonar.test.inclusions=**/test_*.py
+            -Dsonar.python.version=3.11
 
   notify-sonarqube-failure:
     name: Notify SonarQube Failure
@@ -117,21 +127,35 @@ jobs:
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_COLOR: danger
-          SLACK_TITLE: Pull Request SonarQube Analysis Failed
+          SLACK_TITLE: SonarQube Analysis Failed
           SLACK_MESSAGE: |
-            ❌ SonarQube analysis failed in Pull Request
-            PR: `${{ github.event.pull_request.title }}`
-            Author: `${{ github.event.pull_request.user.login }}`
-            Please check the SonarQube dashboard for details
+            ❌ SonarQube analysis failed for branch `${{ github.ref_name }}`
+            Please check the analysis report for details
+          SLACK_FOOTER: Pull Request Workflow
+
+  notify-success:
+    name: Notify Success
+    needs: [test, lint, sonarqube]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: good
+          SLACK_TITLE: Pull Request CI Success
+          SLACK_MESSAGE: |
+            ✅ All checks passed for branch `${{ github.ref_name }}`
+            - Tests: ✅
+            - Linting: ✅
+            - SonarQube: ✅
           SLACK_FOOTER: Pull Request Workflow
 
   move-trello-cards:
     name: Move Trello Cards
     needs: [test, lint, sonarqube]
-    if: |
-      success() && 
-      github.event.pull_request.merged == true && 
-      github.event.action == 'closed'
+    if: success() && github.event.pull_request.merged == true && github.event.action == 'closed'
     runs-on: ubuntu-latest
     steps:
       - name: Extract Trello Card IDs
@@ -160,26 +184,4 @@ jobs:
           for CARD_ID in ${{ env.CARD_IDS }}; do
             curl -s -X PUT "https://api.trello.com/1/cards/$CARD_ID/idList?value=$LIST_ID&key=${{ secrets.TRELLO_KEY }}&token=${{ secrets.TRELLO_TOKEN }}" -o /dev/null
             echo "✅ Moved Trello card $CARD_ID to $LIST_NAME"
-          done
-
-  notify-success:
-    name: Notify Success
-    needs: [test, lint, sonarqube, move-trello-cards]
-    if: success()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Notify Slack
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_COLOR: good
-          SLACK_TITLE: Pull Request Ready for Review
-          SLACK_MESSAGE: |
-            ✅ Pull Request passed all checks
-            PR: `${{ github.event.pull_request.title }}`
-            Author: `${{ github.event.pull_request.user.login }}`
-            - Tests: ✅
-            - Linting: ✅
-            - SonarQube: ✅
-            - Trello Cards: ✅
-          SLACK_FOOTER: Pull Request Workflow 
+          done 
