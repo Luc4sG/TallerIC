@@ -1,0 +1,59 @@
+name: PR Description Generator
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    types: [opened, edited, synchronize]
+
+jobs:
+  generate-pr-description:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract branch name and card ID
+        id: extract
+        run: |
+          BRANCH_NAME=${GITHUB_HEAD_REF}
+          if [[ $BRANCH_NAME =~ ^feature/([A-Za-z0-9]+)- ]]; then
+            CARD_ID=$(echo $BRANCH_NAME | grep -o 'feature/[A-Za-z0-9]*-' | cut -d'/' -f2 | cut -d'-' -f1)
+            echo "CARD_ID=$CARD_ID" >> $GITHUB_ENV
+            echo "BRANCH_TYPE=feature" >> $GITHUB_ENV
+          elif [[ $BRANCH_NAME =~ ^hotfix/([A-Za-z0-9]+)- ]]; then
+            CARD_ID=$(echo $BRANCH_NAME | grep -o 'hotfix/[A-Za-z0-9]*-' | cut -d'/' -f2 | cut -d'-' -f1)
+            echo "CARD_ID=$CARD_ID" >> $GITHUB_ENV
+            echo "BRANCH_TYPE=hotfix" >> $GITHUB_ENV
+          fi
+
+      - name: Get Trello card details
+        if: env.CARD_ID != ''
+        id: trello
+        run: |
+          CARD_DETAILS=$(curl -s "https://api.trello.com/1/cards/${{ env.CARD_ID }}?key=${{ secrets.TRELLO_KEY }}&token=${{ secrets.TRELLO_TOKEN }}")
+          SHORTLINK=$(echo $CARD_DETAILS | jq -r '.shortUrl')
+          CARD_NAME=$(echo $CARD_DETAILS | jq -r '.name')
+          CARD_DESC=$(echo $CARD_DETAILS | jq -r '.desc')
+          echo "TRELLO_SHORTLINK=$SHORTLINK" >> $GITHUB_ENV
+          echo "TRELLO_CARD_NAME=$CARD_NAME" >> $GITHUB_ENV
+          echo "TRELLO_CARD_DESC=$CARD_DESC" >> $GITHUB_ENV
+
+      - name: Generate PR description with OpenAI
+        uses: platisd/openai-pr-description@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          sample_prompt: |
+            You are a helpful assistant that generates pull request descriptions.
+            The PR is related to a Trello card with ID ${{ env.CARD_ID }}.
+            Card Name: ${{ env.TRELLO_CARD_NAME }}
+            Card Description: ${{ env.TRELLO_CARD_DESC }}
+            Please include the Trello card shortlink (${{ env.TRELLO_SHORTLINK }}) in your description.
+            Focus on explaining why the changes are needed rather than what they are.
+            If this is a hotfix, emphasize the critical nature of the fix.
+            Use the card's name and description as context for your explanation.
+          completion_prompt: |
+            Generate a pull request description that:
+            1. Includes the Trello card shortlink: ${{ env.TRELLO_SHORTLINK }}
+            2. References the card's name and description
+            3. Explains the purpose and context of the changes
+            4. Highlights any critical fixes if this is a hotfix
+            5. Mentions any dependencies or related changes
+          overwrite_description: true 
