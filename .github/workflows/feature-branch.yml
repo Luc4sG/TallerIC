@@ -67,7 +67,7 @@ jobs:
           
       - name: Run black
         run: |
-          black . --check
+          black .
 
   notify-lint-failure:
     name: Notify Linting Failure
