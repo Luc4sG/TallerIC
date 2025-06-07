@@ -24,7 +24,7 @@ jobs:
           
       - name: Run tests
         run: |
-          pytest tests/ -v
+          PYTHONPATH=$PYTHONPATH:$(pwd) pytest tests/ -v
 
   notify-test-failure:
     name: Notify Test Failure
