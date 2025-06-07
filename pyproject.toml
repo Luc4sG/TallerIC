@@ -1,5 +1,5 @@
 [tool.black]
-line-length = 127
+line-length = 88
 target-version = ['py311']
 include = '\.pyi?$'
 exclude = '''
@@ -13,6 +13,15 @@ exclude = '''
   | buck-out
   | build
   | dist
-  | doc
 )/
-''' 
+'''
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = "E203"
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+] 
