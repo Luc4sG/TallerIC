@@ -128,7 +128,10 @@ jobs:
   move-trello-cards:
     name: Move Trello Cards
     needs: [test, lint, sonarqube]
-    if: success() && github.event.pull_request.merged == true
+    if: |
+      success() && 
+      github.event.pull_request.merged == true && 
+      github.event.action == 'closed'
     runs-on: ubuntu-latest
     steps:
       - name: Extract Trello Card IDs
