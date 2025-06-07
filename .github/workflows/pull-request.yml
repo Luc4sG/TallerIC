@@ -29,7 +29,7 @@ jobs:
           
       - name: Run tests with coverage
         run: |
-          pytest --cov=./ --cov-report=xml:coverage.xml --junitxml=test-results.xml
+          PYTHONPATH=$PYTHONPATH:$(pwd) pytest --cov=./ --cov-report=xml:coverage.xml --junitxml=test-results.xml
 
   notify-test-failure:
     name: Notify Test Failure
