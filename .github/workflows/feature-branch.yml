@@ -72,7 +72,7 @@ jobs:
   notify-lint-failure:
     name: Notify Linting Failure
     needs: lint
-    if: failure()
+    if: failure() && needs.lint.result == 'failure'
     runs-on: ubuntu-latest
     steps:
       - name: Notify Slack
