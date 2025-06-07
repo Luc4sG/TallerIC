@@ -11,23 +11,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Extract Trello card ID
-        id: extract
+      - name: Validate branch name
+        id: validate
         run: |
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          CARD_ID=$(echo $BRANCH_NAME | grep -o 'feature/[A-Za-z0-9]*-' | cut -d'/' -f2 | cut -d'-' -f1)
-          echo "CARD_ID=$CARD_ID" >> $GITHUB_ENV
-          if [ -z "$CARD_ID" ]; then
-            echo "Invalid branch name format. Expected: feature/CARD_ID-description"
+          
+          if [[ $BRANCH_NAME =~ ^feature/[A-Za-z0-9]+- ]]; then
+            echo "BRANCH_TYPE=feature" >> $GITHUB_ENV
+            CARD_ID=$(echo $BRANCH_NAME | grep -o 'feature/[A-Za-z0-9]*-' | cut -d'/' -f2 | cut -d'-' -f1)
+            echo "CARD_ID=$CARD_ID" >> $GITHUB_ENV
+          elif [[ $BRANCH_NAME =~ ^hotfix/[A-Za-z0-9]+- ]]; then
+            echo "BRANCH_TYPE=hotfix" >> $GITHUB_ENV
+          else
+            echo "Invalid branch name format. Expected: feature/CARD_ID-description or hotfix/CARD_ID-description"
             exit 1
           fi
 
       - name: Move Trello card to In Progress
+        if: env.BRANCH_TYPE == 'feature'
         run: |
           curl -s -X PUT "https://api.trello.com/1/cards/${{ env.CARD_ID }}/idList?value=${{ secrets.TRELLO_IN_PROGRESS_LIST_ID }}&key=${{ secrets.TRELLO_KEY }}&token=${{ secrets.TRELLO_TOKEN }}" -o /dev/null \
           && echo "✅ Trello card ${{ env.CARD_ID }} moved to In Progress"
 
-      - name: Notify Slack
+      - name: Notify Slack for Feature Branch
+        if: env.BRANCH_TYPE == 'feature'
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -36,4 +43,16 @@ jobs:
           SLACK_MESSAGE: |
             Branch: `${{ github.ref_name }}`
             Trello card moved to In Progress
+          SLACK_FOOTER: Branch Validation Workflow
+
+      - name: Notify Slack for Hotfix Branch
+        if: env.BRANCH_TYPE == 'hotfix'
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: warning
+          SLACK_TITLE: New Hotfix Branch Created ⚠️
+          SLACK_MESSAGE: |
+            Branch: `${{ github.ref_name }}`
+            Please ensure this is a critical fix that needs immediate attention
           SLACK_FOOTER: Branch Validation Workflow 
