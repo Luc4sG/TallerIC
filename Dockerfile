@@ -1,5 +1,8 @@
 FROM python:3.11-slim
 
+# Crear usuario no privilegiado
+RUN useradd -m -u 1000 appuser
+
 WORKDIR /app
 
 # Instalar dependencias y configurar el entorno
@@ -19,6 +22,12 @@ echo "3. Verificar sin modificar: black . --check"\n\
 
 # Copiar todo el repositorio
 COPY . .
+
+# Cambiar el propietario de los archivos al usuario no privilegiado
+RUN chown -R appuser:appuser /app
+
+# Cambiar al usuario no privilegiado
+USER appuser
 
 # Exponer el puerto
 EXPOSE 8000
