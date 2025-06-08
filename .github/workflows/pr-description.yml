@@ -48,9 +48,10 @@ jobs:
           openai_api_key: ${{ secrets.OPENAI_API_KEY }}
           sample_prompt: |
             You are a helpful assistant that generates pull request descriptions.
-            If a Trello card ID is provided (${{ env.CARD_ID }}), use it directly, if not skip the card name and description.
+            If a Trello card ID is provided (${{ env.CARD_ID }}), use it directly, if not skip the card name, description and shortlink.
             Card Name: ${{ env.TRELLO_CARD_NAME }}
             Card Description: ${{ env.TRELLO_CARD_DESC }}
+            Trello card shortlink (${{ env.TRELLO_SHORTLINK }}) included in the description.
             Focus on explaining why the changes are needed rather than what they are.
             If this is a hotfix, emphasize the critical nature of the fix.
             Use the card's name and description as context for your explanation.
