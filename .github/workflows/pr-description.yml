@@ -3,7 +3,13 @@ name: PR Description Generator
 on:
   pull_request:
     branches: [ main, develop ]
-    types: [opened, edited, synchronize]
+    types: [opened]
+
+# Agregar permisos para modificar PRs
+permissions:
+  pull-requests: write
+  contents: read
+
 
 jobs:
   generate-pr-description:
@@ -42,18 +48,22 @@ jobs:
           openai_api_key: ${{ secrets.OPENAI_API_KEY }}
           sample_prompt: |
             You are a helpful assistant that generates pull request descriptions.
-            The PR is related to a Trello card with ID ${{ env.CARD_ID }}.
+            If a Trello card ID is provided (${{ env.CARD_ID }}), use it directly, if not skip the card name, description and shortlink.
             Card Name: ${{ env.TRELLO_CARD_NAME }}
             Card Description: ${{ env.TRELLO_CARD_DESC }}
-            Please include the Trello card shortlink (${{ env.TRELLO_SHORTLINK }}) in your description.
+            Trello card shortlink (${{ env.TRELLO_SHORTLINK }}) included in the description.
             Focus on explaining why the changes are needed rather than what they are.
             If this is a hotfix, emphasize the critical nature of the fix.
             Use the card's name and description as context for your explanation.
+            If this is a PR from develop to main and no Trello card IDs are found, leave a section at the top of the description for manual Trello card URLs with the format:
+            "Trello Cards:
+            - [Add Trello card URLs here]"
           completion_prompt: |
             Generate a pull request description that:
-            1. Includes the Trello card shortlink: ${{ env.TRELLO_SHORTLINK }}
-            2. References the card's name and description
-            3. Explains the purpose and context of the changes
-            4. Highlights any critical fixes if this is a hotfix
-            5. Mentions any dependencies or related changes
+            1. If Trello card IDs are found, includes their shortlinks
+            2. If no Trello card IDs are found in a develop to main PR, includes a section for manual Trello card URLs
+            3. References the card's name and description if possible
+            4. Explains the purpose and context of the changes
+            5. Highlights any critical fixes if this is a hotfix
+            6. Mentions any dependencies or related changes
           overwrite_description: true 

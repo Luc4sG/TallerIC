@@ -5,7 +5,7 @@ app = FastAPI()
 
 @app.get("/")
 def read_root():
-    """Devuelve una breve descripcion del servicio."""
+    """Devuelve una breve descripcion del servicio. Cambio aca para probar el workflow"""
     return {
         "description": "Esta es una pequeña API de calculadora. Puedes sumar, restar, multiplicar y dividir dos números usando las rutas /add, /subtract, /multiply y /divide."
     }
@@ -25,7 +25,7 @@ def subtract(a: float, b: float):
 
 @app.get("/multiply")
 def multiply(a: float, b: float):
-    """Multiplica dos números y devuelve el resultado."""
+    """Multiplica dos números y devuelve el resultado. Cambio aca para probar el workflow"""
     return {
         "resultado": a * b,
         "mensaje": "La multiplicación se realizó correctamente.",
