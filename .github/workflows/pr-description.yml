@@ -48,18 +48,21 @@ jobs:
           openai_api_key: ${{ secrets.OPENAI_API_KEY }}
           sample_prompt: |
             You are a helpful assistant that generates pull request descriptions.
-            The PR is related to a Trello card with ID ${{ env.CARD_ID }}.
-            Card Name: ${{ env.TRELLO_CARD_NAME }}
-            Card Description: ${{ env.TRELLO_CARD_DESC }}
-            Please include the Trello card shortlink (${{ env.TRELLO_SHORTLINK }}) in your description.
-            Focus on explaining why the changes are needed rather than what they are.
-            If this is a hotfix, emphasize the critical nature of the fix.
-            Use the card's name and description as context for your explanation.
+            If a Trello card ID is provided (${{ env.CARD_ID }}), use it directly, if not skip the card name and description.
+              Card Name: ${{ env.TRELLO_CARD_NAME }}
+              Card Description: ${{ env.TRELLO_CARD_DESC }}
+              Please include all relevant Trello card shortlinks in your description.
+              Focus on explaining why the changes are needed rather than what they are.
+              If this is a hotfix, emphasize the critical nature of the fix.
+              Use the card's name and description as context for your explanation.
+            If no Trello card ID is provided, analyze the commit messages to find Trello card IDs in the format "XXXXX-Description" (like GiHaKwki-TestCard1).
+            For each found Trello card ID, generate its shortlink in the format "https://trello.com/c/XXXXX".          
           completion_prompt: |
             Generate a pull request description that:
-            1. Includes the Trello card shortlink: ${{ env.TRELLO_SHORTLINK }}
+            1. Includes all relevant Trello card shortlinks (either provided or extracted from commit messages)
             2. References the card's name and description
             3. Explains the purpose and context of the changes
             4. Highlights any critical fixes if this is a hotfix
             5. Mentions any dependencies or related changes
+            If multiple Trello cards are found in commit messages, include all of them in the description.
           overwrite_description: true 
