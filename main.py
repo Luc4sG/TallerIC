@@ -25,7 +25,7 @@ def subtract(a: float, b: float):
 
 @app.get("/multiply")
 def multiply(a: float, b: float):
-    """Multiplica dos números y devuelve el resultado."""
+    """Multiplica dos números y devuelve el resultado. Cambio aca para probar el workflow"""
     return {
         "resultado": a * b,
         "mensaje": "La multiplicación se realizó correctamente.",
