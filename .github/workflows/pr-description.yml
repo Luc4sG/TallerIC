@@ -5,6 +5,11 @@ on:
     branches: [ main, develop ]
     types: [opened, edited, synchronize]
 
+# Agregar permisos para modificar PRs
+permissions:
+  pull-requests: write
+  contents: read
+
 jobs:
   generate-pr-description:
     runs-on: ubuntu-latest
