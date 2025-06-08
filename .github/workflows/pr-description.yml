@@ -60,7 +60,7 @@ jobs:
           completion_prompt: |
             Generate a pull request description that:
             1. Includes all relevant Trello card shortlinks (either provided or extracted from commit messages)
-            2. References the card's name and description
+            2. References the card's name and description if possible
             3. Explains the purpose and context of the changes
             4. Highlights any critical fixes if this is a hotfix
             5. Mentions any dependencies or related changes
