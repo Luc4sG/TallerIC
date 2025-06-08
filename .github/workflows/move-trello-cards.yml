@@ -1,29 +1,23 @@
 name: Move Trello Cards
 
 on:
-  workflow_run:
-    workflows: ["Pull Request CI"]
+  pull_request:
+    types: [closed]
     branches:
       - main
       - develop
-    types:
-      - completed
 
 jobs:
   move-cards:
     name: Move Trello Cards
     runs-on: ubuntu-latest
-    if: |
-      github.event.workflow_run.conclusion == 'success' && 
-      github.event.workflow_run.event == 'pull_request' && 
-      github.event.workflow_run.event.pull_request.merged == true && 
-      github.event.workflow_run.event.action == 'closed'
+    if: github.event.pull_request.merged == true
     steps:
       - name: Extract Trello Card IDs
         id: extract
         run: |
           # Extract card IDs from PR description using multiple patterns
-          CARD_IDS=$(echo "${{ github.event.workflow_run.event.pull_request.body }}" | grep -o -E 'https://trello.com/c/[A-Za-z0-9]+|trello.com/c/[A-Za-z0-9]+|\[Trello\]\(https://trello.com/c/[A-Za-z0-9]+\)' | sed -E 's/.*trello.com\/c\/([A-Za-z0-9]+).*/\1/')
+          CARD_IDS=$(echo "${{ github.event.pull_request.body }}" | grep -o -E 'https://trello.com/c/[A-Za-z0-9]+|trello.com/c/[A-Za-z0-9]+|\[Trello\]\(https://trello.com/c/[A-Za-z0-9]+\)' | sed -E 's/.*trello.com\/c\/([A-Za-z0-9]+).*/\1/')
           if [ -z "$CARD_IDS" ]; then
             echo "No Trello card IDs found in PR description"
             exit 0
@@ -34,7 +28,7 @@ jobs:
         if: env.CARD_IDS != ''
         run: |
           # Determine target list ID based on the target branch
-          if [ "${{ github.event.workflow_run.event.pull_request.base.ref }}" = "main" ]; then
+          if [ "${{ github.event.pull_request.base.ref }}" = "main" ]; then
             LIST_ID="${{ secrets.TRELLO_DONE_LIST_ID }}"
             LIST_NAME="Done"
           else
@@ -56,7 +50,7 @@ jobs:
           SLACK_TITLE: Trello Cards Update
           SLACK_MESSAGE: |
             🎯 Trello cards update ${{ job.status }}
-            PR: `${{ github.event.workflow_run.event.pull_request.title }}`
-            Branch: `${{ github.event.workflow_run.event.pull_request.base.ref }}`
+            PR: `${{ github.event.pull_request.title }}`
+            Branch: `${{ github.event.pull_request.base.ref }}`
             Cards moved to: `${{ job.status == 'success' && 'Done/Review' || 'Failed' }}`
           SLACK_FOOTER: Trello Cards Workflow 
