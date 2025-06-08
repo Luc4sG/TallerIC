@@ -12,8 +12,6 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     env:
-      TRELLO_KEY: ${{ secrets.TRELLO_KEY }}
-      TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
       TRELLO_DONE_LIST_ID: ${{ secrets.TRELLO_DONE_LIST_ID }}
       TRELLO_REVIEW_LIST_ID: ${{ secrets.TRELLO_REVIEW_LIST_ID }}
     steps:
@@ -47,7 +45,8 @@ jobs:
               ;;
           esac
           for CARD_ID in "${IDS[@]}"; do
-            curl -s -X PUT "https://api.trello.com/1/cards/$CARD_ID/idList?value=$LIST_ID&key=${env.TRELLO_KEY}&token=${env.TRELLO_TOKEN}" -o /dev/null
+            echo "Moving card $CARD_ID to $LIST_NAME list"
+            curl -s -X PUT "https://api.trello.com/1/cards/$CARD_ID/idList?value=$LIST_ID&key=${{ secrets.TRELLO_KEY }}&token=${{ secrets.TRELLO_TOKEN }}" -o /dev/null
             echo "✅ Moved Trello card $CARD_ID to $LIST_NAME"
           done
 
