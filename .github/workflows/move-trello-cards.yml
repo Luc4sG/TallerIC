@@ -9,70 +9,45 @@ on:
 
 jobs:
   move-cards:
-    name: Move Trello Cards
-    runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    env:
+      TRELLO_KEY: ${{ secrets.TRELLO_KEY }}
+      TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
+      TRELLO_DONE_LIST_ID: ${{ secrets.TRELLO_DONE_LIST_ID }}
+      TRELLO_REVIEW_LIST_ID: ${{ secrets.TRELLO_REVIEW_LIST_ID }}
     steps:
       - name: Extract Trello Card IDs
         id: extract
         run: |
-          # Extract card IDs from PR description using multiple patterns
-          PR_BODY="${{ github.event.pull_request.body }}"
-          echo "PR Body: $PR_BODY"  # Debug line
-          
-          if [ -n "$PR_BODY" ]; then
-            # Try different patterns for Trello links
-            CARD_IDS=$(echo "$PR_BODY" | grep -o -E 'https://trello.com/c/[A-Za-z0-9]+|trello.com/c/[A-Za-z0-9]+|\[Trello\]\(https://trello.com/c/[A-Za-z0-9]+\)|\[.*\]\(https://trello.com/c/[A-Za-z0-9]+\)' | sed -E 's/.*trello.com\/c\/([A-Za-z0-9]+).*/\1/' | tr '\n' ' ' | xargs)
-            echo "Found card IDs from PR description: $CARD_IDS"  # Debug line
-          fi
-          
-          # If no card IDs found in PR description, try to extract from commit messages
-          if [ -z "$CARD_IDS" ]; then
-            echo "No card IDs found in PR description, checking commit messages..."  # Debug line
-            # Get commit messages between base and head
-            COMMIT_MESSAGES=$(git log --pretty=format:"%s" ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
-            echo "Commit messages: $COMMIT_MESSAGES"  # Debug line
-            # Extract potential Trello IDs (8 characters alphanumeric)
-            CARD_IDS=$(echo "$COMMIT_MESSAGES" | grep -o -E '[A-Za-z0-9]{8}' | sort -u | tr '\n' ' ' | xargs)
-            echo "Found card IDs from commit messages: $CARD_IDS"  # Debug line
-          fi
-          
-          if [ -z "$CARD_IDS" ]; then
-            echo "No Trello card IDs found in PR description or commit messages"
-            exit 0
-          fi
-          
-          # Validate each card ID (should be 8 characters)
-          VALID_CARD_IDS=""
-          for ID in $CARD_IDS; do
-            if [[ $ID =~ ^[A-Za-z0-9]{8}$ ]]; then
-              VALID_CARD_IDS="$VALID_CARD_IDS $ID"
-            fi
-          done
-          
-          if [ -z "$VALID_CARD_IDS" ]; then
-            echo "No valid Trello card IDs found"
-            exit 0
-          fi
-          
-          echo "Final valid card IDs: $VALID_CARD_IDS"  # Debug line
-          # Set the environment variable with valid card IDs
-          echo "CARD_IDS=$VALID_CARD_IDS" >> $GITHUB_ENV
-          
+          CARD_IDS=$(echo "${{ github.event.pull_request.body }}" \
+            | grep -oE 'trello\.com/c/[A-Za-z0-9]+' \
+            | sed 's#.*/c/##' \
+            | uniq \
+            | paste -sd',' -)
+          echo "Extracted CARD_IDS=$CARD_IDS"
+          echo "::set-output name=card_ids::$CARD_IDS"
+
       - name: Move Cards Based on Target Branch
-        if: env.CARD_IDS != ''
+        if: steps.extract.outputs.card_ids != ''
         run: |
-          # Determine target list ID based on the target branch
-          if [ "${{ github.event.pull_request.base.ref }}" = "main" ]; then
-            LIST_ID="${{ secrets.TRELLO_DONE_LIST_ID }}"
-            LIST_NAME="Done"
-          else
-            LIST_ID="${{ secrets.TRELLO_REVIEW_LIST_ID }}"
-            LIST_NAME="Review"
-          fi
-          
-          for CARD_ID in ${{ env.CARD_IDS }}; do
-            curl -s -X PUT "https://api.trello.com/1/cards/$CARD_ID/idList?value=$LIST_ID&key=${{ secrets.TRELLO_KEY }}&token=${{ secrets.TRELLO_TOKEN }}" -o /dev/null
+          IFS=',' read -r -a IDS <<< "${{ steps.extract.outputs.card_ids }}"
+          case "${{ github.event.pull_request.base.ref }}" in
+            main)
+              LIST_ID="${{ env.TRELLO_DONE_LIST_ID }}"
+              LIST_NAME="Done"
+              ;;
+            develop)
+              LIST_ID="${{ env.TRELLO_REVIEW_LIST_ID }}"
+              LIST_NAME="Review"
+              ;;
+            *)
+              echo "Unsupported target branch '${{ github.event.pull_request.base.ref }}'; skipping."
+              exit 0
+              ;;
+          esac
+          for CARD_ID in "${IDS[@]}"; do
+            curl -s -X PUT "https://api.trello.com/1/cards/$CARD_ID/idList?value=$LIST_ID&key=${env.TRELLO_KEY}&token=${env.TRELLO_TOKEN}" -o /dev/null
             echo "✅ Moved Trello card $CARD_ID to $LIST_NAME"
           done
 
@@ -88,4 +63,4 @@ jobs:
             PR: `${{ github.event.pull_request.title }}`
             Branch: `${{ github.event.pull_request.base.ref }}`
             Cards moved to: `${{ job.status == 'success' && 'Done/Review' || 'Failed' }}`
-          SLACK_FOOTER: Trello Cards Workflow 
+          SLACK_FOOTER: Trello Cards Workflow
