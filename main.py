@@ -7,7 +7,7 @@ app = FastAPI()
 def read_root():
     """Devuelve una breve descripcion del servicio. Cambio aca para probar el workflow"""
     return {
-        "description": "Esta es una pequeña API de calculadora. Puedes sumar, restar, multiplicar y dividir dos números usando las rutas /add, /subtract, /multiply y /divide."
+        "description": "This is a simple calculator API. You can add, subtract, multiply and divide two numbers using the /add, /subtract, /multiply and /divide routes."
     }
 
 
