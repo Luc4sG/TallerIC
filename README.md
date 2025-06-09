@@ -1,6 +1,5 @@
 # TallerIC
 
-[![CI](https://github.com/Luc4sG/TallerIC/actions/workflows/ci.yml/badge.svg)](https://github.com/Luc4sG/TallerIC/actions/workflows/ci.yml)
 [![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=Luc4sG_TallerIC&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Luc4sG_TallerIC)
 [![Cobertura de Código](https://sonarcloud.io/api/project_badges/measure?project=Luc4sG_TallerIC&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Luc4sG_TallerIC)
 [![Calidad de Código](https://sonarcloud.io/api/project_badges/measure?project=Luc4sG_TallerIC&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=Luc4sG_TallerIC)
@@ -79,9 +78,9 @@ feature/GiHaKwki-AutenticacionDeUsuario
    - **Descripción de PR**: Genera automáticamente una descripción basada en la tarjeta de Trello
    - **Pipeline de CI**: Ejecuta pruebas, linting y verificaciones de calidad de código
    - **Integración con Trello**: 
-     - Mueve tarjetas a "Review" cuando se crea el PR
-     - Mueve tarjetas a "Done" cuando el PR se fusiona a main
+     - Mueve tarjetas a "In Progress" cuando se crea el PR
      - Mueve tarjetas a "Review" cuando el PR se fusiona a develop
+     - Mueve tarjetas a "Done" cuando el PR se fusiona a main
 
 ### Reglas de Protección de Ramas
 
