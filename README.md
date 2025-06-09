@@ -1,69 +1,124 @@
-# FastAPI Hello World with CI/CD Pipeline
+# TallerIC
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Luc4sG_TallerIC&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Luc4sG_TallerIC)
+[![CI](https://github.com/Luc4sG/TallerIC/actions/workflows/ci.yml/badge.svg)](https://github.com/Luc4sG/TallerIC/actions/workflows/ci.yml)
+[![SonarCloud](https://sonarcloud.io/api/project_badges/measure?project=Luc4sG_TallerIC&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Luc4sG_TallerIC)
+[![Cobertura de Código](https://sonarcloud.io/api/project_badges/measure?project=Luc4sG_TallerIC&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Luc4sG_TallerIC)
+[![Calidad de Código](https://sonarcloud.io/api/project_badges/measure?project=Luc4sG_TallerIC&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=Luc4sG_TallerIC)
+[![Mantenibilidad](https://sonarcloud.io/api/project_badges/measure?project=Luc4sG_TallerIC&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Luc4sG_TallerIC)
 
-Este proyecto es una aplicación simple de FastAPI con un pipeline completo de CI/CD que incluye:
-- Integración con Trello y Slack
-- Validación de nombres de ramas
-- Linting y pruebas automáticas
-- Análisis de código con SonarQube
-- Despliegue automático a Render
+## Descripción del Proyecto
 
-## Configuración
+Este proyecto implementa un pipeline de Integración Continua (IC) utilizando una API simple desarrollada con FastAPI. El objetivo es demostrar las prácticas y herramientas fundamentales de IC, incluyendo:
 
-### Secrets de GitHub
+- Repositorio de código (GitHub)
+- Servidor de IC (GitHub Actions)
+- Entorno de desarrollo local
+- Pruebas automatizadas
+- Análisis de calidad de código (SonarCloud)
+- Integración con herramientas de gestión (Trello)
+- Notificaciones automáticas (Slack)
+- Despliegue continuo
 
-Necesitarás configurar los siguientes secrets en tu repositorio de GitHub:
+## Componentes del Pipeline
 
-- `TRELLO_TOKEN`: Token de API de Trello
-- `TRELLO_KEY`: Key de API de Trello
-- `TRELLO_IN_PROGRESS_LIST_ID`: ID de la lista "In Progress" en Trello
-- `SLACK_WEBHOOK_URL`: URL del webhook de Slack
-- `SONAR_TOKEN`: Token de SonarQube
-- `SONAR_HOST_URL`: URL de tu instancia de SonarQube
-- `RENDER_API_KEY`: API Key de Render
-- `RENDER_SERVICE_ID`: ID del servicio en Render
+### 1. Repositorio de Código
+- GitHub como sistema de control de versiones
+- Ramas protegidas (main y develop)
+- Convención de nombres para ramas de feature
+- Integración con Trello para seguimiento de tareas
+
+### 2. Servidor de Integración Continua
+- GitHub Actions como servidor de IC
+- Workflows automatizados para:
+  - Validación de código
+  - Pruebas unitarias
+  - Análisis de calidad
+  - Despliegue automático
+
+### 3. Entorno de Desarrollo
+- Build local con uvicorn
+- Pruebas automatizadas con pytest
+- Linting con Flake8 y Black
+- Análisis de código con SonarCloud
+
+### 4. Pruebas Automatizadas
+- Pruebas unitarias para endpoints de la API
+- Verificación de cobertura de código
+- Validación de calidad y estilo
+- Integración con el pipeline de CI
+
+## Flujo de Desarrollo
 
 ### Convención de Nombres de Ramas
 
-Las ramas de feature deben seguir el formato:
+Todas las ramas de características deben seguir este patrón:
 ```
-feature/CARD_ID-descripcion
+feature/[ID_TARJETA_TRELLO]-[DESCRIPCION_CORTA]
 ```
-Donde `CARD_ID` es el ID corto de la tarjeta de Trello.
 
-## Desarrollo Local
+Ejemplo:
+```
+feature/GiHaKwki-AutenticacionDeUsuario
+```
 
-1. Clona el repositorio
-2. Instala las dependencias:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Ejecuta la aplicación:
-   ```bash
-   uvicorn main:app --reload
-   ```
+### Proceso de Pull Request
 
-## Pipeline de CI/CD
+1. **Creación de Rama**
+   - Crear una nueva rama desde `develop` usando la convención de nombres anterior
+   - El ID de la tarjeta de Trello en el nombre de la rama es crucial para la automatización
 
-El pipeline incluye los siguientes workflows:
+2. **Descripción del PR**
+   - La descripción del PR debe incluir el enlace de Trello en uno de estos formatos:
+     ```
+     https://trello.com/c/[ID_TARJETA]
+     [Trello](https://trello.com/c/[ID_TARJETA])
+     ```
+   - Para PRs de `develop` a `main`, si no se encuentra una tarjeta de Trello, se agregará una sección para URLs manuales de tarjetas
 
-1. **Branch Validation**: Valida el nombre de la rama y actualiza el estado en Trello
-2. **Linting**: Ejecuta Flake8 y Black
-3. **Testing**: Ejecuta las pruebas con pytest
-4. **SonarQube**: Realiza análisis de código en pull requests
-5. **Deploy**: Despliega la aplicación a Render cuando se hace merge a main
+3. **Flujos de Trabajo Automatizados**
+   - **Descripción de PR**: Genera automáticamente una descripción basada en la tarjeta de Trello
+   - **Pipeline de CI**: Ejecuta pruebas, linting y verificaciones de calidad de código
+   - **Integración con Trello**: 
+     - Mueve tarjetas a "Review" cuando se crea el PR
+     - Mueve tarjetas a "Done" cuando el PR se fusiona a main
+     - Mueve tarjetas a "Review" cuando el PR se fusiona a develop
 
-## Notificaciones
+### Reglas de Protección de Ramas
 
-- Se envían notificaciones a Slack para:
-  - Creación de nuevas ramas
-  - Fallos en linting
-  - Fallos en pruebas
-  - Fallos en análisis de SonarQube
-  - Fallos y éxitos en despliegue
+- Las ramas `main` y `develop` están protegidas
+- Requiere revisiones de PR antes de fusionar
+- Requiere que el pipeline de CI pase
+- Requiere ramas actualizadas antes de fusionar
 
-# TallerIC
+### Calidad de Código
+
+- Análisis de SonarCloud en cada PR
+- Se aplican requisitos de cobertura de código
+- Deben pasar las puertas de calidad
+- Se monitorea la calificación de mantenibilidad
+
+### Pruebas Automatizadas
+
+- Se requieren pruebas unitarias para nuevas características
+- Pruebas de integración para rutas críticas
+- Se monitorea la cobertura de pruebas
+- Las pruebas fallidas bloquean la fusión del PR
+
+## Contribución
+
+1. Crear una nueva rama desde `develop` siguiendo la convención de nombres
+2. Realizar los cambios
+3. Crear un PR con el formato de descripción adecuado
+4. Esperar por CI y revisiones
+5. Fusionar solo después de la aprobación y que pasen todas las verificaciones
+
+## Mejores Prácticas
+
+- Mantener los PRs enfocados y pequeños
+- Incluir pruebas para nuevas características
+- Seguir el estilo de código existente
+- Actualizar la documentación cuando sea necesario
+- Usar mensajes de commit significativos
 
 ## Configuración del Entorno de Desarrollo
 
