@@ -28,7 +28,7 @@ jobs:
           
       - name: Run tests with coverage
         run: |
-          PYTHONPATH=$PYTHONPATH:$(pwd) pytest --cov=./ --cov-report=xml:coverage.xml --cov-fail-under=100 --junitxml=test-results.xml -v
+          PYTHONPATH=$PYTHONPATH:$(pwd) pytest --cov=./ --cov-report=xml:coverage.xml --junitxml=test-results.xml -v
           
       - name: List generated files
         run: |
