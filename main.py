@@ -38,3 +38,9 @@ def divide(a: float, b: float):
     if b == 0:
         raise HTTPException(status_code=400, detail="No se puede dividir por cero.")
     return {"resultado": a / b, "mensaje": "La división se realizó correctamente."}
+
+
+@app.get("/unprotecteddivide")
+def divide(a: float, b: float):
+    """Divide dos números y devuelve el resultado. Si b es 0, lanza un error."""
+    return {"resultado": a / b, "mensaje": "La división se realizó correctamente."}
