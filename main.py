@@ -38,3 +38,8 @@ def multiply(a: float, b: float):
 #     if b == 0:
 #         raise HTTPException(status_code=400, detail="No se puede dividir por cero.")
 #     return {"resultado": a / b, "mensaje": "La división se realizó correctamente."}
+
+
+@app.get("/test")
+def test():
+    return {"mensaje": "Hola"}
