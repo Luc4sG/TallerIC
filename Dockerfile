@@ -5,14 +5,16 @@ RUN useradd -m -u 1000 appuser
 
 WORKDIR /app
 
+# Copiar los archivos de dependencias primero
+COPY requirements.txt .
+COPY pyproject.toml .
+
 # Instalar dependencias y configurar el entorno
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
     && rm -rf /var/lib/apt/lists/* \
-    && git init \
     && pip install --no-cache-dir -r requirements.txt
 
-# Copiar todo el repositorio
+# Copiar el resto del código del proyecto
 COPY . .
 
 # Cambiar el propietario de los archivos al usuario no privilegiado
