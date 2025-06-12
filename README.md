@@ -6,6 +6,7 @@
 [![Mantenibilidad](https://sonarcloud.io/api/project_badges/measure?project=Luc4sG_TallerIC&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=Luc4sG_TallerIC)
 
 ## Descripción del Proyecto
+![PipelineTallerIC](https://github.com/user-attachments/assets/1a73d0aa-b296-4a1a-b2ab-c5c64061c8df)
 
 Este proyecto implementa un pipeline de Integración Continua (IC) utilizando una API simple desarrollada con FastAPI. El objetivo es demostrar las prácticas y herramientas fundamentales de IC, incluyendo:
 
