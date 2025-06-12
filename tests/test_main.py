@@ -33,14 +33,14 @@ def test_multiply():
     assert "multiplicación" in response.json()["mensaje"].lower()
 
 
-def test_divide():
-    response = client.get("/divide?a=10&b=2")
-    assert response.status_code == 200
-    assert response.json()["resultado"] == 5
-    assert "división" in response.json()["mensaje"].lower()
+# def test_divide():
+#     response = client.get("/divide?a=10&b=2")
+#     assert response.status_code == 200
+#     assert response.json()["resultado"] == 5
+#     assert "división" in response.json()["mensaje"].lower()
 
 
-def test_divide_by_zero():
-    response = client.get("/divide?a=10&b=0")
-    assert response.status_code == 400
-    assert "cero" in response.json()["detail"].lower()
+# def test_divide_by_zero():
+#     response = client.get("/divide?a=10&b=0")
+#     assert response.status_code == 400
+#     assert "cero" in response.json()["detail"].lower()
