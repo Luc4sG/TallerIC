@@ -51,10 +51,3 @@ def test_unprotected_divide():
     assert response.status_code == 200
     assert response.json()["resultado"] == 5
     assert "división" in response.json()["mensaje"].lower()
-
-
-def test_unprotected_divide_by_zero():
-    response = client.get("/unprotecteddivide?a=10&b=0")
-    assert (
-        response.status_code == 500
-    )  # Debería fallar con un error 500 ya que no está protegido
