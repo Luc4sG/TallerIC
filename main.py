@@ -32,6 +32,8 @@ def multiply(a: float, b: float):
     }
 
 
+
+
 # @app.get("/divide")
 # def divide(a: float, b: float):
 #     """Divide dos números y devuelve el resultado. Si b es 0, lanza un error."""
