@@ -41,6 +41,6 @@ def divide(a: float, b: float):
 
 
 @app.get("/unprotecteddivide")
-def divide(a: float, b: float):
+def unprotecteddivide(a: float, b: float):
     """Divide dos números y devuelve el resultado. Si b es 0, lanza un error."""
     return {"resultado": a / b, "mensaje": "La división se realizó correctamente."}
