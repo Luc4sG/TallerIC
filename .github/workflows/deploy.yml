@@ -35,6 +35,4 @@ jobs:
             🚀 Deployment to Render ${{ job.status }}
             Branch: `${{ github.ref_name }}`
             Commit: `${{ github.sha }}`
-            Workflow: `${{ github.event.workflow_run.name }}`
-            Triggered by: `${{ github.event.workflow_run.actor }}`
           SLACK_FOOTER: Production Deploy Workflow 
