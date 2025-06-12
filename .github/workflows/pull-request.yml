@@ -119,11 +119,28 @@ jobs:
           name: test-results
           path: .
 
+      - name: Verify coverage and test reports
+        run: |
+          echo "Verifying coverage report..."
+          if [ ! -f "coverage.xml" ]; then
+            echo "Error: coverage.xml not found"
+            exit 1
+          fi
+          echo "Verifying test results report..."
+          if [ ! -f "test-results.xml" ]; then
+            echo "Error: test-results.xml not found"
+            exit 1
+          fi
+          echo "Reports verified successfully"
+
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_PROJECT_PROPERTIES: sonar-project.properties
+          SONAR_PYTHON_COVERAGE_REPORT_PATHS: coverage.xml
+          SONAR_PYTHON_XUNIT_REPORT_PATH: test-results.xml
 
   notify-sonarqube-failure:
     name: Notify SonarQube Failure
